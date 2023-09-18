@@ -15,6 +15,8 @@ SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 class tap_shopifyStream(RESTStream):
     """tap_shopify stream class."""
 
+    first_request_params = None
+
     @property
     def url_base(self) -> str:
         """Return the API URL root, configurable via tap settings."""
