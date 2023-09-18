@@ -18,10 +18,7 @@ class tap_shopifyStream(RESTStream):
     @property
     def url_base(self) -> str:
         """Return the API URL root, configurable via tap settings."""
-        url_base = self.config.get(
-            "admin_url"
-        ) or "https://%s.myshopify.com/admin" % self.config.get("store")
-        return url_base
+        return self.config.get("admin_url", f"https://{self.config['store']}.myshopify.com/admin")
 
     records_jsonpath = "$[*]"  # Or override `parse_response`.
     next_page_token_jsonpath = "$.next_page"  # Or override `get_next_page_token`.
@@ -65,6 +62,10 @@ class tap_shopifyStream(RESTStream):
         if next_page_token:
             return dict(parse_qsl(urlsplit(next_page_token).query))
 
+        if self.first_request_params:
+	    # Endpoints that require params **only** on the first request, not during pagination (Orders)
+            params = self.first_request_params
+
         context_state = self.get_context_state(context)
         last_updated = context_state.get("replication_key_value")
 
@@ -75,6 +76,7 @@ class tap_shopifyStream(RESTStream):
             return params
         elif start_date:
             params["created_at_min"] = start_date
+
         return params
 
     def post_process(self, row: dict, context: Optional[dict] = None):
